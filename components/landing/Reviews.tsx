@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { FadeIn } from "@/components/motion/FadeIn";
 
 const reviews = [
   {
@@ -20,14 +22,32 @@ const reviews = [
   },
 ];
 
+const slideVariants = {
+  enter: (direction: number) => ({
+    x: direction > 0 ? 80 : -80,
+    opacity: 0,
+  }),
+  center: {
+    x: 0,
+    opacity: 1,
+  },
+  exit: (direction: number) => ({
+    x: direction > 0 ? -80 : 80,
+    opacity: 0,
+  }),
+};
+
 export function Reviews() {
   const [current, setCurrent] = useState(0);
+  const [direction, setDirection] = useState(1);
 
   const next = useCallback(() => {
+    setDirection(1);
     setCurrent((prev) => (prev + 1) % reviews.length);
   }, []);
 
   const prev = useCallback(() => {
+    setDirection(-1);
     setCurrent((prev) => (prev - 1 + reviews.length) % reviews.length);
   }, []);
 
@@ -37,71 +57,86 @@ export function Reviews() {
   }, [next]);
 
   return (
-    <section className="relative flex flex-col items-center justify-center bg-black px-6 py-24">
+    <FadeIn direction="up" className="relative flex flex-col items-center justify-center bg-black px-6 py-24">
       <div className="relative flex w-full max-w-[600px] items-center">
         <button
           onClick={prev}
-          className="absolute -left-12 hidden text-white/50 transition-colors hover:text-white md:block"
+          className="absolute -left-12 hidden text-white/50 transition-all duration-300 hover:scale-110 hover:text-white md:block"
           aria-label="Forrige anmeldelse"
         >
           <ChevronLeft className="size-8" />
         </button>
 
         <div className="w-full text-center">
-          <div className="relative min-h-[200px]">
-            {reviews.map((review, i) => (
-              <div
-                key={i}
-                className={`absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-500 ${
-                  i === current ? "opacity-100" : "pointer-events-none opacity-0"
-                }`}
+          <div className="relative min-h-[200px] overflow-hidden">
+            <AnimatePresence mode="wait" custom={direction}>
+              <motion.div
+                key={current}
+                custom={direction}
+                variants={slideVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{ duration: 0.5, ease: [0.25, 0.4, 0.25, 1] }}
+                className="absolute inset-0 flex flex-col items-center justify-center"
               >
                 <h3 className="mb-6 font-heading text-2xl font-bold text-gold md:text-3xl">
-                  {review.title}
+                  {reviews[current].title}
                 </h3>
                 <p className="font-mono text-sm leading-relaxed text-white/90">
-                  {review.text}
+                  {reviews[current].text}
                 </p>
-              </div>
-            ))}
+              </motion.div>
+            </AnimatePresence>
           </div>
 
           <div className="mt-6 flex justify-center gap-2">
             {reviews.map((_, i) => (
               <button
                 key={i}
-                onClick={() => setCurrent(i)}
-                className={`size-2.5 rounded-full transition-colors ${
-                  i === current ? "bg-white" : "bg-white/30"
-                }`}
+                onClick={() => {
+                  setDirection(i > current ? 1 : -1);
+                  setCurrent(i);
+                }}
+                className="relative size-2.5 rounded-full bg-white/30"
                 aria-label={`Anmeldelse ${i + 1}`}
-              />
+              >
+                {i === current && (
+                  <motion.div
+                    layoutId="reviewDot"
+                    className="absolute inset-0 rounded-full bg-white"
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                  />
+                )}
+              </button>
             ))}
           </div>
         </div>
 
         <button
           onClick={next}
-          className="absolute -right-12 hidden text-white/50 transition-colors hover:text-white md:block"
+          className="absolute -right-12 hidden text-white/50 transition-all duration-300 hover:scale-110 hover:text-white md:block"
           aria-label="Neste anmeldelse"
         >
           <ChevronRight className="size-8" />
         </button>
       </div>
 
-      <Link
-        href="https://no.tripadvisor.com/Restaurant_Review-g226926-d21186516-Reviews-Spor_3-Sandnes_Rogaland_Western_Norway.html"
-        target="_blank"
-        className="mt-10 transition-opacity hover:opacity-80"
-      >
-        <Image
-          src="/images/tripadvisor-badge.png"
-          alt="TripAdvisor rated"
-          width={160}
-          height={40}
-          className="opacity-90"
-        />
-      </Link>
-    </section>
+      <FadeIn direction="up" delay={0.3}>
+        <Link
+          href="https://no.tripadvisor.com/Restaurant_Review-g226926-d21186516-Reviews-Spor_3-Sandnes_Rogaland_Western_Norway.html"
+          target="_blank"
+          className="mt-10 inline-block transition-all duration-300 hover:scale-105 hover:opacity-80"
+        >
+          <Image
+            src="/images/tripadvisor-badge.png"
+            alt="TripAdvisor rated"
+            width={160}
+            height={40}
+            className="opacity-90"
+          />
+        </Link>
+      </FadeIn>
+    </FadeIn>
   );
 }

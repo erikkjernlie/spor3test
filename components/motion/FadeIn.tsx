@@ -1,7 +1,7 @@
 "use client";
 
-import { type ReactNode } from "react";
-import { motion, type Variant } from "framer-motion";
+import { type ReactNode, useMemo } from "react";
+import { motion } from "framer-motion";
 
 type Direction = "up" | "down" | "left" | "right" | "none";
 
@@ -16,30 +16,6 @@ interface FadeInProps {
   rotate?: boolean;
 }
 
-const getInitial = (
-  direction: Direction,
-  distance: number,
-  rotate: boolean
-): Variant => {
-  const base: Record<string, number> = { opacity: 0 };
-  if (rotate) base.rotateX = -60;
-  switch (direction) {
-    case "up":
-      base.y = distance;
-      break;
-    case "down":
-      base.y = -distance;
-      break;
-    case "left":
-      base.x = distance;
-      break;
-    case "right":
-      base.x = -distance;
-      break;
-  }
-  return base;
-};
-
 export function FadeIn({
   children,
   direction = "up",
@@ -50,9 +26,20 @@ export function FadeIn({
   once = true,
   rotate = false,
 }: FadeInProps) {
+  const initial = useMemo(() => {
+    const y = direction === "up" ? distance : direction === "down" ? -distance : 0;
+    const x = direction === "left" ? distance : direction === "right" ? -distance : 0;
+    return {
+      opacity: 0,
+      y,
+      x,
+      ...(rotate ? { rotateX: -60 } : {}),
+    };
+  }, [direction, distance, rotate]);
+
   return (
     <motion.div
-      initial={getInitial(direction, distance, rotate)}
+      initial={initial}
       whileInView={{ opacity: 1, y: 0, x: 0, rotateX: 0 }}
       viewport={{ once, margin: "-50px" }}
       transition={{
